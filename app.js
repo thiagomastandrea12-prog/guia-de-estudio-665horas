@@ -54,7 +54,7 @@ let RV={q:null,sh:false};const OP=new Set();
 
 function vHome(){
  const s=stats(),i=tIdx(),due=dueCards().length;
- let h=`<h1>Hola 👋 ¿qué toca hoy?</h1><div class="grid">${stat("Progreso",s.pct+" %")}${stat("Horas hechas",s.lh+" h")}${stat("Horas restantes",s.rem+" h")}${stat("Racha",streak()+" días")}${stat("Tarjetas por repasar",due)}${stat("Promedio quizzes",avgQ())}${stat("Pruebas grandes",passedEx()+"/"+C.sectors.filter(s=>s.t.some(i=>TP[i])).length)}</div><div class="bar"><i style="width:${s.pct}%"></i></div>`;
+ let h=`<h1>Hola 👋 ¿qué toca hoy?</h1><div class="grid">${stat("Progreso",s.pct+" %")}${stat("Horas hechas",s.lh+" h")}${stat("Horas restantes",s.rem+" h")}${stat("Racha",streak()+" días")}${stat("Tarjetas por repasar",due)}${stat("Promedio quizzes",avgQ())}${stat("Pruebas grandes",passedEx()+"/"+C.sectors.filter(s=>s.t.some(i=>TP[i])).length)}${window.LAB?LAB.stat():""}</div><div class="bar"><i style="width:${s.pct}%"></i></div>`;
  const le=D.lastExport;if(!le||Date.now()-le>6048e5)h+=`<div class="card">💾 Hace tiempo que no descargas una copia de tus datos. <a href="#/ajustes">Hazlo en Ajustes</a>.</div>`;
  if(due)h+=`<div class="card">🧠 Tienes <b>${due}</b> tarjetas para repasar hoy → <a href="#/repaso">ir a Repaso</a></div>`;
  h+=`<h2>🎯 Hoy</h2>`;
@@ -95,7 +95,7 @@ const tItems=(ids,code)=>{const r=[];ids.forEach(i=>{const t=TP[i];if(!t)return;
 function endRun(){if(G&&G.iv)clearInterval(G.iv);G=M=A=null}
 function startRun(o){endRun();G=Object.assign({i:0,s:0,a:null,fin:0},o);if(o.time){G.end=Date.now()+o.time*1e3;G.iv=setInterval(()=>{const l=Math.max(0,Math.ceil((G.end-Date.now())/1e3)),e=$("#tl");if(e)e.textContent="⏱ "+l+" s";if(!l){clearInterval(G.iv);finish();route(true)}},500)}route(true)}
 function finish(){if(!G||G.fin)return;G.fin=1;const r={d:iso(today()),s:G.s,n:G.its.length};
- if(G.kind=="topic")(D.quiz[G.key]=D.quiz[G.key]||[]).push(r);else if(G.kind=="exam")(D.exam[G.key]=D.exam[G.key]||[]).push(r);else D.games[G.key]=Math.max(D.games[G.key]||0,G.s);save()}
+ if(G.kind=="topic")(D.quiz[G.key]=D.quiz[G.key]||[]).push(r);else if(G.kind=="exam")(D.exam[G.key]=D.exam[G.key]||[]).push(r);else D.games[G.key]=Math.max(D.games[G.key]||0,G.s);save();if(window.LAB)LAB.fin(G)}
 function startTopic(id){const its=shuf(tItems([id],0));startRun({kind:"topic",key:id,title:"❓ "+TP[id].title,its,re:()=>startTopic(id)})}
 function startTopicCode(id){const its=shuf((TP[id].code||[]).map(q=>mk(q,1)));startRun({kind:"topic",key:id,title:"💻 Código: "+TP[id].title,its,re:()=>startTopicCode(id)})}
 function startExam(sid){const s=C.sectors.find(x=>x.id==sid),its=shuf(tItems(s.t)).slice(0,12);if(its.length<3){toast("Este sector aún tiene pocas preguntas");return}startRun({kind:"exam",key:sid,title:"🏆 Prueba grande: "+s.n,its,re:()=>startExam(sid)})}
@@ -183,12 +183,12 @@ function exp(){D.lastExport=Date.now();save();const b=new Blob([JSON.stringify(D
 function imp(f){const r=new FileReader();r.onload=()=>{try{const o=JSON.parse(r.result);if(!o||typeof o!="object"||typeof o.checks!="object")throw 0;if(!confirm("Esto reemplaza tus datos actuales por los del archivo. ¿Continuar?"))return;D=mig(o);save();theme();route();toast("✅ Datos importados")}catch(e){toast("❌ Archivo no válido")}};r.readAsText(f)}
 
 /* ---------- router y eventos ---------- */
-const NAV=[["inicio","🏠 Inicio"],["plan","🗓️ Plan"],["cursos","📖 Cursos"],["retos","🎮 Retos"],["repaso","🧠 Repaso"],["notas","📝 Notas"],["consejos","💡 Consejos"],["progreso","📊 Progreso"],["ajustes","⚙️ Ajustes"]];
+const NAV=[["inicio","🏠 Inicio"],["plan","🗓️ Plan"],["cursos","📖 Cursos"],["retos","🎮 Retos"],["lab","🧪 Laboratorio"],["repaso","🧠 Repaso"],["notas","📝 Notas"],["consejos","💡 Consejos"],["progreso","📊 Progreso"],["ajustes","⚙️ Ajustes"]];
 function theme(){document.documentElement.dataset.theme=D.theme=="auto"?"":D.theme}
 function route(keep){
  const y=window.scrollY,p=location.hash.replace(/^#\/?/,"").split("/"),v=p[0]||"inicio",a=p[1];
-  const V={inicio:vHome,plan:()=>vPlan(a),cursos:()=>a?vTopic(a):vCourses(),retos:vRetos,consejos:vTips,repaso:vReview,notas:vNotes,progreso:vProg,ajustes:vSettings};
- $("#main").innerHTML=(V[v]||vHome)();
+  const V={inicio:vHome,plan:()=>vPlan(a),cursos:()=>a?vTopic(a):vCourses(),retos:vRetos,lab:()=>window.LAB?LAB.view():"",consejos:vTips,repaso:vReview,notas:vNotes,progreso:vProg,ajustes:vSettings};
+ $("#main").innerHTML=(V[v]||vHome)();if(window.LAB&&LAB.post)LAB.post();
  document.querySelectorAll("#nav a").forEach(x=>x.classList.toggle("on",x.dataset.n==(V[v]?v:"inicio")));
  if(keep)window.scrollTo(0,y);else if(v=="plan"&&a){const e=document.getElementById("d-"+a);if(e)e.scrollIntoView({block:"center"})}else window.scrollTo(0,0)}
 function init(){
@@ -222,7 +222,7 @@ function init(){
   else if(a=="import")$("#imp").click();
   else if(a=="reset"){if(confirm("Se borrarán TODOS tus datos. ¿Descargaste una copia?")&&prompt("Escribe BORRAR para confirmar")=="BORRAR"){D=mig(null);save();route();toast("Datos borrados")}}});
  document.addEventListener("change",e=>{const t=e.target,d=t.dataset;
-  if(d.c){if(t.checked)D.checks[d.c]=1;else delete D.checks[d.c]}
+  if(d.c){if(t.checked){D.checks[d.c]=1;if(window.LAB)LAB.blk(d.c)}else delete D.checks[d.c]}
   else if(d.h){if(t.value==="")delete D.hours[d.h];else D.hours[d.h]=Math.max(0,Math.min(16,+t.value||0))}
   else if(d.m){if(t.value)D.mast[d.m]=t.value;else delete D.mast[d.m]}
   else if(d.x){if(t.checked)D.ex[d.x]=1;else delete D.ex[d.x]}
@@ -235,6 +235,7 @@ function init(){
  document.addEventListener("toggle",e=>{const w=e.target.dataset&&e.target.dataset.w;if(w){if(e.target.open)OP.add(w);else OP.delete(w)}},true);
  document.addEventListener("keydown",e=>{if(e.key=="/"&&!/INPUT|TEXTAREA|SELECT/.test(document.activeElement.tagName)){e.preventDefault();$("#q").focus()}if(e.key=="Escape")$("#sr").hidden=true;if(e.key=="Enter"&&e.target.id=="ga"){const x=document.querySelector('[data-act="tg"]');if(x)x.click()}})}
 
+window.PW={D:()=>D,save,route,toast,esc,iso,today,streak,shuf};
 /* ---------- puerta de acceso ---------- */
 async function sha(s){const b=await crypto.subtle.digest("SHA-256",new TextEncoder().encode(SALT+s));return[...new Uint8Array(b)].map(x=>x.toString(16).padStart(2,"0")).join("")}
 function open(){$("#gate").hidden=true;$("#app").hidden=false;init()}

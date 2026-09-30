@@ -39,5 +39,5 @@ details{background:var(--card);border:1px solid var(--bd);border-radius:var(--r)
 <main id="main"></main></div><div id="toast"></div>
 <script>
 (function(){const t=Date.now();function L(s,ok,no){const e=document.createElement("script");e.src=s+"?t="+t;e.onload=ok;e.onerror=no;document.head.appendChild(e)}
-L("content.js",function(){let i=1;(function n(){L("topics/t"+i+".js",function(){i++;n()},function(){L("app.js")})})()},function(){document.getElementById("gate").innerHTML="<p style='padding:30px'>No se pudo cargar content.js</p>"})})();
+L("content.js",function(){let i=1;(function n(){L("topics/t"+i+".js",function(){i++;n()},function(){L("app.js",function(){L("lab.js")})})})()},function(){document.getElementById("gate").innerHTML="<p style='padding:30px'>No se pudo cargar content.js</p>"})})();
 </script></body></html>
